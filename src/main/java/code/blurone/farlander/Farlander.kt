@@ -1,11 +1,9 @@
 package code.blurone.farlander
 
 import it.unimi.dsi.fastutil.doubles.DoubleList
-import net.minecraft.core.Holder
 import net.minecraft.world.level.levelgen.DensityFunction
 import net.minecraft.world.level.levelgen.DensityFunctions
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator
-import net.minecraft.world.level.levelgen.synth.BlendedNoise
 import net.minecraft.world.level.levelgen.synth.NormalNoise
 import net.minecraft.world.level.levelgen.synth.PerlinNoise
 import org.bukkit.Bukkit
@@ -18,6 +16,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.world.WorldInitEvent
 import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.java.JavaPlugin
+import java.util.function.Function
 
 
 class Farlander : JavaPlugin(), Listener {
@@ -61,13 +60,14 @@ class Farlander : JavaPlugin(), Listener {
 
             if (worldNormalNoise == null) {
                 logger.info("worldNormalNoise is null")
-                return
             }
-
+            else {
             val oldPerlinNoise: PerlinNoise = worldNormalNoise.javaClass.getDeclaredField("d").apply { isAccessible = true }.get(worldNormalNoise) as PerlinNoise
             val firstOctave: Int = oldPerlinNoise.javaClass.superclass.getDeclaredField("c").apply { isAccessible = true }.getInt(oldPerlinNoise)
             val amplitudes: DoubleList = oldPerlinNoise.javaClass.superclass.getDeclaredField("d").apply { isAccessible = true }.get(oldPerlinNoise) as DoubleList
-            worldNormalNoise.javaClass.getDeclaredField("d").apply { isAccessible = true }.set(worldNormalNoise, FarlandNoise(noiseBasedChunkGenerator.settings.value().randomSource.newInstance(world.seed), com.mojang.datafixers.util.Pair(firstOctave, amplitudes), !noiseBasedChunkGenerator.settings.value().useLegacyRandomSource))
+            worldNormalNoise.javaClass.getDeclaredField("d").apply { isAccessible = true }.set(worldNormalNoise, FarPerlinNoise(noiseBasedChunkGenerator.settings.value().randomSource.newInstance(world.seed), com.mojang.datafixers.util.Pair(firstOctave, amplitudes), !noiseBasedChunkGenerator.settings.value().useLegacyRandomSource))
+            }
+
         }
         logger.info(world.name)
         /*
@@ -88,43 +88,50 @@ class Farlander : JavaPlugin(), Listener {
         logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
         */
 
-        /*
-        logger.info((router.barrierNoise as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.continents as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.depth as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.erosion as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.finalDensity as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.fluidLevelFloodednessNoise as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.fluidLevelSpreadNoise as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.initialDensityWithoutJaggedness as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.lavaNoise as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.ridges as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.temperature as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.vegetation as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.veinGap as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.veinRidged as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        logger.info((router.veinToggle as DensityFunctions.HolderHolder).function.value().javaClass.canonicalName)
-        */
+        logger.info(prober(router.barrierNoise)?.javaClass?.canonicalName)
+        logger.info(prober(router.continents)?.javaClass?.canonicalName)
+        logger.info(prober(router.depth)?.javaClass?.canonicalName)
+        logger.info(prober(router.erosion)?.javaClass?.canonicalName)
+        logger.info(prober(router.finalDensity)?.javaClass?.canonicalName)
+        logger.info(prober(router.fluidLevelFloodednessNoise)?.javaClass?.canonicalName)
+        logger.info(prober(router.fluidLevelSpreadNoise)?.javaClass?.canonicalName)
+        logger.info(prober(router.initialDensityWithoutJaggedness)?.javaClass?.canonicalName)
+        logger.info(prober(router.lavaNoise)?.javaClass?.canonicalName)
+        logger.info(prober(router.ridges)?.javaClass?.canonicalName)
+        logger.info(prober(router.temperature)?.javaClass?.canonicalName)
+        logger.info(prober(router.vegetation)?.javaClass?.canonicalName)
+        logger.info(prober(router.veinGap)?.javaClass?.canonicalName)
+        logger.info(prober(router.veinRidged)?.javaClass?.canonicalName)
+        logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
     }
 
     private fun prober(origin: DensityFunction): Any?
     {
-        for (field in origin.javaClass.declaredFields) {
-            val past = field.isAccessible
-            field.isAccessible = true
-            val value = field.get(origin)
-            if (value is DensityFunction.NoiseHolder)
-                return value.noise
+        when (origin) {
+            is DensityFunctions.HolderHolder -> {
+                return prober(origin.function.value())
+            }
 
-            if (value.javaClass.name.contains("DensityFunction."))
-                return value
-            else if (value is DensityFunction)
-                return prober(value)
+            is DensityFunctions.MarkerOrMarked -> {
+                return prober(origin.wrapped())
+            }
 
-            if (value is Holder<*>)
-                return prober(value.value() as DensityFunction)
-            field.isAccessible = past
+            is DensityFunctions.Spline ->{
+                return prober(origin.spline.comap(Function<DensityFunctions.Spline.Point, DensityFunctions.Spline.Point>(origin.spline.apply()))
+            }
         }
+        if (origin.javaClass.simpleName == "a") {
+            logger.info(prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
+            logger.info(prober(origin.javaClass.getDeclaredField("g").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
+            return null
+        }
+
+        if (origin.javaClass.simpleName == "h") return null
+        if (origin.javaClass.simpleName == "k") return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
+        if (origin.javaClass.simpleName == "l") return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
+        if (origin.javaClass.simpleName == "o") return (origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+        if (origin.javaClass.simpleName == "q") return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)
+        if (origin.javaClass.simpleName == "v") return (origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
         return origin
     }
 }

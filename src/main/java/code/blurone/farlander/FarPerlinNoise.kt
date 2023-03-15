@@ -6,7 +6,7 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.level.levelgen.synth.ImprovedNoise
 import net.minecraft.world.level.levelgen.synth.PerlinNoise
 
-class FarlandNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Boolean) : PerlinNoise(var0, var1, var2) {
+class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Boolean) : PerlinNoise(var0, var1, var2) {
 
     @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
