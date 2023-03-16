@@ -12,8 +12,8 @@ import net.minecraft.world.level.levelgen.synth.SimplexNoise
 
 class FarEndIslandDensityFunction(var0: Long, override val highX: Int, override val highZ: Int,
                                   override val lowX: Int, override val lowZ: Int) : DensityFunction.SimpleFunction, FarlandNoise {
-    //val CODEC: KeyDispatchDataCodec<EndIslandDensityFunction?> =
-    //    KeyDispatchDataCodec.of(MapCodec.unit(EndIslandDensityFunction(0L)))
+    private val CODEC: KeyDispatchDataCodec<FarEndIslandDensityFunction> =
+        KeyDispatchDataCodec.of(MapCodec.unit(EndIslandDensityFunction(0L, 12550824, 12550824, 12550824, 12550824)))
     private val ISLAND_THRESHOLD = -0.9f
     private val islandNoise: SimplexNoise
 
