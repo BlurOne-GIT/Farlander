@@ -18,6 +18,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.world.WorldInitEvent
 import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.java.JavaPlugin
+import org.junit.internal.Throwables
 import java.lang.reflect.Field
 import java.util.function.Function
 
@@ -29,7 +30,8 @@ class Farlander : JavaPlugin(), Listener {
 
 
         for (world in Bukkit.getWorlds()) {
-            prepareWorld(world)
+            if (config.contains("worlds.${world.name}"))
+                prepareWorld(world)
         }
 
         Bukkit.getPluginManager().registerEvents(this, this)
@@ -91,24 +93,24 @@ class Farlander : JavaPlugin(), Listener {
         logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
         */
 
-        logger.info(prober(router.barrierNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.continents)?.javaClass?.canonicalName)
-        logger.info(prober(router.depth)?.javaClass?.canonicalName)
-        logger.info(prober(router.erosion)?.javaClass?.canonicalName)
-        logger.info(prober(router.finalDensity)?.javaClass?.canonicalName)
-        logger.info(prober(router.fluidLevelFloodednessNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.fluidLevelSpreadNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.initialDensityWithoutJaggedness)?.javaClass?.canonicalName)
-        logger.info(prober(router.lavaNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.ridges)?.javaClass?.canonicalName)
-        logger.info(prober(router.temperature)?.javaClass?.canonicalName)
-        logger.info(prober(router.vegetation)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinGap)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinRidged)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
+        prober(router.barrierNoise)?.let { replacer(it, world.name) }
+        prober(router.continents)?.let { replacer(it, world.name) }
+        prober(router.depth)?.let { replacer(it, world.name) }
+        prober(router.erosion)?.let { replacer(it, world.name) }
+        prober(router.finalDensity)?.let { replacer(it, world.name) }
+        prober(router.fluidLevelFloodednessNoise)?.let { replacer(it, world.name) }
+        prober(router.fluidLevelSpreadNoise)?.let { replacer(it, world.name) }
+        prober(router.initialDensityWithoutJaggedness)?.let { replacer(it, world.name) }
+        prober(router.lavaNoise)?.let { replacer(it, world.name) }
+        prober(router.ridges)?.let { replacer(it, world.name) }
+        prober(router.temperature)?.let { replacer(it, world.name) }
+        prober(router.vegetation)?.let { replacer(it, world.name) }
+        prober(router.veinGap)?.let { replacer(it, world.name) }
+        prober(router.veinRidged)?.let { replacer(it, world.name) }
+        prober(router.veinToggle)?.let { replacer(it, world.name) }
     }
 
-    private fun prober(origin: DensityFunction): Pair<DensityFunction, Field>?
+    private fun prober(origin: DensityFunction): Pair<Any, Field>?
     {
         for (field in origin.javaClass.declaredFields) {
             if (field.type == BlendedNoise::class.java) return Pair(origin, field)
@@ -142,11 +144,26 @@ class Farlander : JavaPlugin(), Listener {
             "h" -> return null
             "k" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
             "l" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
-            "o" -> return (origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+            "o" -> {
+                val holder: DensityFunction.NoiseHolder = origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder
+                return Pair(holder, holder.javaClass.getDeclaredField("c"))
+            }
             "q" -> return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)
-            "v" -> return (origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+            "v" -> {
+                val holder: DensityFunction.NoiseHolder = origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder
+                return Pair(holder, holder.javaClass.getDeclaredField("c"))
+            }
         }
 
-        return origin
+        throw Exception("Unhandled Density Function (inform developer): ${origin.javaClass.canonicalName}")
+    }
+
+    private fun replacer(pair: Pair<Any, Field>, worldName: String)
+    {
+        pair.second.set(pair.first, when (pair.second.type)
+        {
+            is BlendedNoise::class.java ->
+                is
+        })
     }
 }
