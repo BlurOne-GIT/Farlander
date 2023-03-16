@@ -6,7 +6,8 @@ import net.minecraft.util.RandomSource
 import net.minecraft.world.level.levelgen.synth.ImprovedNoise
 import net.minecraft.world.level.levelgen.synth.PerlinNoise
 
-class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Boolean) : PerlinNoise(var0, var1, var2) {
+class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Boolean, override val highX: Int,
+                     override val highZ: Int, override val lowX: Int, override val lowZ: Int) : PerlinNoise(var0, var1, var2), FarlandNoise {
 
     @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
@@ -28,9 +29,9 @@ class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Bo
             val var18 = noiseLevels[var17]
             if (var18 != null) {
                 val var19 = var18.noise(
-                    wrap(var0 * var13) * if (var0 > 6144 || var0 < -6144) 3137706 else 1,
+                    wrap(var0 * var13) * if (shallBreakX(var0.toInt())) 3137706 else 1,
                     if (var10) -var18.yo else wrap(var2 * var13),
-                    wrap(var4 * var13) * if (var4 > 6144 || var0 < -6144) 3137706 else 1,
+                    wrap(var4 * var13) * if (shallBreakZ(var4.toInt())) 3137706 else 1,
                     var6 * var13,
                     var8 * var13
                 )

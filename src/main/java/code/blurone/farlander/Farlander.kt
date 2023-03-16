@@ -4,8 +4,10 @@ import it.unimi.dsi.fastutil.doubles.DoubleList
 import net.minecraft.world.level.levelgen.DensityFunction
 import net.minecraft.world.level.levelgen.DensityFunctions
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator
+import net.minecraft.world.level.levelgen.synth.BlendedNoise
 import net.minecraft.world.level.levelgen.synth.NormalNoise
 import net.minecraft.world.level.levelgen.synth.PerlinNoise
+import net.minecraft.world.level.levelgen.synth.SimplexNoise
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.World.Environment
@@ -16,6 +18,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.world.WorldInitEvent
 import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.java.JavaPlugin
+import java.lang.reflect.Field
 import java.util.function.Function
 
 
@@ -105,8 +108,13 @@ class Farlander : JavaPlugin(), Listener {
         logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
     }
 
-    private fun prober(origin: DensityFunction): Any?
+    private fun prober(origin: DensityFunction): Pair<DensityFunction, Field>?
     {
+        for (field in origin.javaClass.declaredFields) {
+            if (field.type == BlendedNoise::class.java) return Pair(origin, field)
+            if (field.type == SimplexNoise::class.java) return Pair(origin, field)
+        }
+
         when (origin) {
             is DensityFunctions.HolderHolder -> {
                 return prober(origin.function.value())
@@ -116,22 +124,29 @@ class Farlander : JavaPlugin(), Listener {
                 return prober(origin.wrapped())
             }
 
-            is DensityFunctions.Spline ->{
-                return prober(origin.spline.comap(Function<DensityFunctions.Spline.Point, DensityFunctions.Spline.Point>(origin.spline.apply()))
-            }
+            is DensityFunctions.Spline -> return null
         }
-        if (origin.javaClass.simpleName == "a") {
+        if (origin.javaClass.canonicalName.endsWith("s.a")) {
             logger.info(prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
             logger.info(prober(origin.javaClass.getDeclaredField("g").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
             return null
         }
 
-        if (origin.javaClass.simpleName == "h") return null
-        if (origin.javaClass.simpleName == "k") return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
-        if (origin.javaClass.simpleName == "l") return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
-        if (origin.javaClass.simpleName == "o") return (origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
-        if (origin.javaClass.simpleName == "q") return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)
-        if (origin.javaClass.simpleName == "v") return (origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+        if (origin.javaClass.canonicalName.endsWith("s.d")) return null
+        if (origin.javaClass.canonicalName.endsWith("s.e")) return prober(origin.javaClass.getDeclaredField("a").apply { isAccessible = true }.get(origin) as DensityFunction)
+        if (origin.javaClass.canonicalName.endsWith("s.f")) return null
+
+        when (origin.javaClass.simpleName)
+        {
+            "aa" -> return null
+            "h" -> return null
+            "k" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
+            "l" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
+            "o" -> return (origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+            "q" -> return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)
+            "v" -> return (origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+        }
+
         return origin
     }
 }
