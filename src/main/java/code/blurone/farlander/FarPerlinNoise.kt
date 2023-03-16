@@ -5,9 +5,16 @@ import it.unimi.dsi.fastutil.doubles.DoubleList
 import net.minecraft.util.RandomSource
 import net.minecraft.world.level.levelgen.synth.ImprovedNoise
 import net.minecraft.world.level.levelgen.synth.PerlinNoise
+import kotlin.math.pow
 
-class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Boolean, override val highX: Int,
+class FarPerlinNoise(var0: RandomSource, var1: Pair<Int, DoubleList>, var2: Boolean, override val highX: Int,
                      override val highZ: Int, override val lowX: Int, override val lowZ: Int) : PerlinNoise(var0, var1, var2), FarlandNoise {
+
+    private val firstOctave: Int = var1.first
+    private val amplitudes: DoubleList = var1.second
+    private val lowestFreqInputFactor: Double = 2.0.pow((firstOctave).toDouble())
+    private val lowestFreqValueFactor: Double = 2.0.pow((this.amplitudes.size - 1).toDouble()) / (2.0.pow(this.amplitudes.size.toDouble()) - 1.0)
+    private val noiseLevels: Array<ImprovedNoise?> = arrayOfNulls(this.amplitudes.size)
 
     @Deprecated("Deprecated in Java")
     @Suppress("DEPRECATION")
@@ -20,10 +27,8 @@ class FarPerlinNoise(var0: RandomSource?, var1: Pair<Int, DoubleList>?, var2: Bo
         var10: Boolean
     ): Double {
         var var11 = 0.0
-        var var13 = javaClass.superclass.getDeclaredField("f").apply { isAccessible = true }.getDouble(this)
-        var var15 = javaClass.superclass.getDeclaredField("e").apply { isAccessible = true }.getDouble(this)
-        val noiseLevels = javaClass.superclass.getDeclaredField("b").apply { isAccessible = true }.get(this) as Array<ImprovedNoise?>
-        val amplitudes = javaClass.superclass.getDeclaredField("d").apply { isAccessible = true }.get(this) as DoubleList
+        var var13 = lowestFreqInputFactor
+        var var15 = lowestFreqValueFactor
 
         for (var17 in noiseLevels.indices) {
             val var18 = noiseLevels[var17]

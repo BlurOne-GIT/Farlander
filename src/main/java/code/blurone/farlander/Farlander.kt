@@ -1,6 +1,7 @@
 package code.blurone.farlander
 
 import it.unimi.dsi.fastutil.doubles.DoubleList
+import net.minecraft.util.RandomSource
 import net.minecraft.world.level.levelgen.DensityFunction
 import net.minecraft.world.level.levelgen.DensityFunctions
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator
@@ -10,7 +11,6 @@ import net.minecraft.world.level.levelgen.synth.PerlinNoise
 import net.minecraft.world.level.levelgen.synth.SimplexNoise
 import org.bukkit.Bukkit
 import org.bukkit.World
-import org.bukkit.World.Environment
 import org.bukkit.craftbukkit.v1_19_R2.CraftWorld
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -18,9 +18,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.world.WorldInitEvent
 import org.bukkit.event.world.WorldLoadEvent
 import org.bukkit.plugin.java.JavaPlugin
-import org.junit.internal.Throwables
 import java.lang.reflect.Field
-import java.util.function.Function
 
 
 class Farlander : JavaPlugin(), Listener {
@@ -55,115 +53,126 @@ class Farlander : JavaPlugin(), Listener {
     {
         val noiseBasedChunkGenerator = (world as CraftWorld).handle.chunkSource.generator as NoiseBasedChunkGenerator
         val router = noiseBasedChunkGenerator.settings.value().noiseRouter
-        // Get the BlendedNoise instance from somewhere inside noiseBasedChunkGenerator
-        if (world.environment == Environment.NORMAL) {
-            val worldNormalNoise: NormalNoise? =
-                ((((router.continents as DensityFunctions.HolderHolder).function.value() as DensityFunctions.MarkerOrMarked).wrapped() as DensityFunctions.HolderHolder).function.value()
-                    .let {
-                        return@let it.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(it)
-                    } as DensityFunction.NoiseHolder).noise //ESTO DA NULO NO SE POR QUE
+        val randomSource = noiseBasedChunkGenerator.settings.value().randomSource.newInstance(world.seed)
 
-            if (worldNormalNoise == null) {
-                logger.info("worldNormalNoise is null")
-            }
-            else {
-            val oldPerlinNoise: PerlinNoise = worldNormalNoise.javaClass.getDeclaredField("d").apply { isAccessible = true }.get(worldNormalNoise) as PerlinNoise
-            val firstOctave: Int = oldPerlinNoise.javaClass.superclass.getDeclaredField("c").apply { isAccessible = true }.getInt(oldPerlinNoise)
-            val amplitudes: DoubleList = oldPerlinNoise.javaClass.superclass.getDeclaredField("d").apply { isAccessible = true }.get(oldPerlinNoise) as DoubleList
-            worldNormalNoise.javaClass.getDeclaredField("d").apply { isAccessible = true }.set(worldNormalNoise, FarPerlinNoise(noiseBasedChunkGenerator.settings.value().randomSource.newInstance(world.seed), com.mojang.datafixers.util.Pair(firstOctave, amplitudes), !noiseBasedChunkGenerator.settings.value().useLegacyRandomSource))
-            }
-
-        }
         logger.info(world.name)
-        /*
-        logger.info(prober(router.barrierNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.continents)?.javaClass?.canonicalName)
-        logger.info(prober(router.depth)?.javaClass?.canonicalName)
-        logger.info(prober(router.erosion)?.javaClass?.canonicalName)
-        logger.info(prober(router.finalDensity)?.javaClass?.canonicalName)
-        logger.info(prober(router.fluidLevelFloodednessNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.fluidLevelSpreadNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.initialDensityWithoutJaggedness)?.javaClass?.canonicalName)
-        logger.info(prober(router.lavaNoise)?.javaClass?.canonicalName)
-        logger.info(prober(router.ridges)?.javaClass?.canonicalName)
-        logger.info(prober(router.temperature)?.javaClass?.canonicalName)
-        logger.info(prober(router.vegetation)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinGap)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinRidged)?.javaClass?.canonicalName)
-        logger.info(prober(router.veinToggle)?.javaClass?.canonicalName)
-        */
 
-        prober(router.barrierNoise)?.let { replacer(it, world.name) }
-        prober(router.continents)?.let { replacer(it, world.name) }
-        prober(router.depth)?.let { replacer(it, world.name) }
-        prober(router.erosion)?.let { replacer(it, world.name) }
-        prober(router.finalDensity)?.let { replacer(it, world.name) }
-        prober(router.fluidLevelFloodednessNoise)?.let { replacer(it, world.name) }
-        prober(router.fluidLevelSpreadNoise)?.let { replacer(it, world.name) }
-        prober(router.initialDensityWithoutJaggedness)?.let { replacer(it, world.name) }
-        prober(router.lavaNoise)?.let { replacer(it, world.name) }
-        prober(router.ridges)?.let { replacer(it, world.name) }
-        prober(router.temperature)?.let { replacer(it, world.name) }
-        prober(router.vegetation)?.let { replacer(it, world.name) }
-        prober(router.veinGap)?.let { replacer(it, world.name) }
-        prober(router.veinRidged)?.let { replacer(it, world.name) }
-        prober(router.veinToggle)?.let { replacer(it, world.name) }
+        prober(router.barrierNoise, randomSource, world.name, world.seed)
+        prober(router.continents, randomSource, world.name, world.seed)
+        prober(router.depth, randomSource, world.name, world.seed)
+        prober(router.erosion, randomSource, world.name, world.seed)
+        prober(router.finalDensity, randomSource, world.name, world.seed)
+        prober(router.fluidLevelFloodednessNoise, randomSource, world.name, world.seed)
+        prober(router.fluidLevelSpreadNoise, randomSource, world.name, world.seed)
+        prober(router.initialDensityWithoutJaggedness, randomSource, world.name, world.seed)
+        prober(router.lavaNoise, randomSource, world.name, world.seed)
+        prober(router.ridges, randomSource, world.name, world.seed)
+        prober(router.temperature, randomSource, world.name, world.seed)
+        prober(router.vegetation, randomSource, world.name, world.seed)
+        prober(router.veinGap, randomSource, world.name, world.seed)
+        prober(router.veinRidged, randomSource, world.name, world.seed)
+        prober(router.veinToggle, randomSource, world.name, world.seed)
     }
 
-    private fun prober(origin: DensityFunction): Pair<Any, Field>?
+    private fun prober(origin: DensityFunction, randomSource: RandomSource, worldName: String, seed: Long)
     {
+        //logger.info(origin.javaClass.canonicalName)
         for (field in origin.javaClass.declaredFields) {
-            if (field.type == BlendedNoise::class.java) return Pair(origin, field)
-            if (field.type == SimplexNoise::class.java) return Pair(origin, field)
+            field.isAccessible = true
+            val value = field.get(origin)
+            if (value is BlendedNoise) return replacer(Pair(origin, field), randomSource, worldName, seed)
         }
 
         when (origin) {
             is DensityFunctions.HolderHolder -> {
-                return prober(origin.function.value())
+                if (origin.function.value() is BlendedNoise) return replacer(Pair(origin.function, origin.function.javaClass.getDeclaredField("e")), randomSource, worldName, seed)
+                return prober(origin.function.value(), randomSource, worldName, seed)
             }
 
             is DensityFunctions.MarkerOrMarked -> {
-                return prober(origin.wrapped())
+                return prober(origin.wrapped(), randomSource, worldName, seed)
             }
 
-            is DensityFunctions.Spline -> return null
+            is DensityFunctions.Spline -> return
         }
         if (origin.javaClass.canonicalName.endsWith("s.a")) {
-            logger.info(prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
-            logger.info(prober(origin.javaClass.getDeclaredField("g").apply { isAccessible = true }.get(origin) as DensityFunction)?.javaClass?.canonicalName)
-            return null
+            prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
+            prober(origin.javaClass.getDeclaredField("g").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
+            return
         }
 
-        if (origin.javaClass.canonicalName.endsWith("s.d")) return null
-        if (origin.javaClass.canonicalName.endsWith("s.e")) return prober(origin.javaClass.getDeclaredField("a").apply { isAccessible = true }.get(origin) as DensityFunction)
-        if (origin.javaClass.canonicalName.endsWith("s.f")) return null
+        if (origin.javaClass.canonicalName.endsWith("s.d")) return
+        if (origin.javaClass.canonicalName.endsWith("s.e")) return prober(origin.javaClass.getDeclaredField("a").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
+        if (origin.javaClass.canonicalName.endsWith("s.f")) return
 
         when (origin.javaClass.simpleName)
         {
-            "aa" -> return null
-            "h" -> return null
-            "k" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
-            "l" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction)
+            "aa" -> return
+            "g" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
+            "h" -> return
+            "i" -> return replacer(Pair(origin, origin.javaClass.getDeclaredField("f")), randomSource, worldName, seed)
+            "k" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
+            "l" -> return prober(origin.javaClass.getDeclaredField("e").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
             "o" -> {
-                val holder: DensityFunction.NoiseHolder = origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder
-                return Pair(holder, holder.javaClass.getDeclaredField("c"))
+                val noise: NormalNoise = (origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+                    ?: return
+                replacer(Pair(noise, origin.javaClass.getDeclaredField("d")), randomSource, worldName, seed)
+                return replacer(Pair(noise, noise.javaClass.getDeclaredField("e")), randomSource, worldName, seed)
             }
-            "q" -> return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction)
+            "q" -> return prober(origin.javaClass.getDeclaredField("f").apply { isAccessible = true }.get(origin) as DensityFunction, randomSource, worldName, seed)
             "v" -> {
-                val holder: DensityFunction.NoiseHolder = origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder
-                return Pair(holder, holder.javaClass.getDeclaredField("c"))
+                val noise: NormalNoise = (origin.javaClass.getDeclaredField("j").apply { isAccessible = true }.get(origin) as DensityFunction.NoiseHolder).noise
+                    ?: return
+                replacer(Pair(noise, origin.javaClass.getDeclaredField("d")), randomSource, worldName, seed)
+                return replacer(Pair(noise, noise.javaClass.getDeclaredField("e")), randomSource, worldName, seed)
             }
         }
 
         throw Exception("Unhandled Density Function (inform developer): ${origin.javaClass.canonicalName}")
     }
 
-    private fun replacer(pair: Pair<Any, Field>, worldName: String)
+    private fun replacer(pair: Pair<Any, Field>, randomSource: RandomSource, worldName: String, seed: Long)
     {
-        pair.second.set(pair.first, when (pair.second.type)
+        pair.second.isAccessible = true
+        val noise = pair.second.get(pair.first)
+        logger.info(noise.javaClass.canonicalName)
+        val highX: Int = config.getInt("world.$worldName.highX", 12550824)
+        val highZ: Int = config.getInt("world.$worldName.highZ", 12550824)
+        val lowX: Int = config.getInt("world.$worldName.lowX", 12550824)
+        val lowZ: Int = config.getInt("world.$worldName.lowZ", 12550824)
+
+
+        val farlandNoise: FarlandNoise = when (noise)
         {
-            is BlendedNoise::class.java ->
-                is
-        })
+            is BlendedNoise -> {
+                logger.info("replacing blended noise")
+                val minLimitNoise: PerlinNoise = noise.javaClass.getDeclaredField("g").apply { isAccessible = true }.get(noise) as PerlinNoise
+                val maxLimitNoise: PerlinNoise = noise.javaClass.getDeclaredField("h").apply { isAccessible = true }.get(noise) as PerlinNoise
+                val mainNoise: PerlinNoise = noise.javaClass.getDeclaredField("i").apply { isAccessible = true }.get(noise) as PerlinNoise
+                val xzScale: Double = noise.javaClass.getDeclaredField("p").apply { isAccessible = true }.getDouble(noise)
+                val yScale: Double = noise.javaClass.getDeclaredField("q").apply { isAccessible = true }.getDouble(noise)
+                val xzFactor: Double = noise.javaClass.getDeclaredField("l").apply { isAccessible = true }.getDouble(noise)
+                val yFactor: Double = noise.javaClass.getDeclaredField("m").apply { isAccessible = true }.getDouble(noise)
+                val smearScaleMultiplier: Double = noise.javaClass.getDeclaredField("n").apply { isAccessible = true }.getDouble(noise)
+                FarBlendedNoise(minLimitNoise, maxLimitNoise, mainNoise, xzScale, yScale, xzFactor, yFactor, smearScaleMultiplier, randomSource, highX, highZ, lowX, lowZ)
+            }
+
+            is PerlinNoise -> {
+                logger.info("replacing perlin noise")
+                val firstOctave: Int = noise.javaClass.superclass.getDeclaredField("c").apply { isAccessible = true }.getInt(this)
+                val amplitudes = javaClass.superclass.getDeclaredField("d").apply { isAccessible = true }.get(this) as DoubleList
+                FarPerlinNoise(randomSource, com.mojang.datafixers.util.Pair(firstOctave, amplitudes), true, highX, highZ, lowX, lowZ)
+            }
+
+            is SimplexNoise -> FarSimplexNoise(randomSource, highX, highZ, lowX, lowZ)
+
+            else -> {
+                logger.info("error replacing noise ${noise.javaClass.canonicalName} in ${pair.first.javaClass.canonicalName}::${pair.second.name}")
+                return
+            }
+        }
+
+        pair.second.set(pair.first, farlandNoise)
+        logger.info("Replaced noise in ${pair.first.javaClass.canonicalName}::${pair.second.name} with ${farlandNoise.javaClass.canonicalName}")
     }
 }
