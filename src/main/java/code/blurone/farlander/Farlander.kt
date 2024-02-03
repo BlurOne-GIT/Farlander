@@ -12,4 +12,7 @@ class Farlander : JavaPlugin() {
         // Plugin shutdown logic
     }
 
+    override fun getDefaultWorldGenerator(worldName: String, id: String?): ChunkGenerator {
+        return FarlandsChunkGenerator()
+    }
 }
