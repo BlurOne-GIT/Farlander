@@ -1,7 +1,0 @@
-name: Farlander
-version: '${project.version}'
-main: code.blurone.farlander.Farlander
-api-version: 1.19
-author: BlurOne!
-description: Bring back the farlands!
-#load: STARTUP

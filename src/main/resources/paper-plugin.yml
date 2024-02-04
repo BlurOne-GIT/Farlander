@@ -1,0 +1,6 @@
+name: Farlander
+version: '${project.version}'
+main: code.blurone.farlander.Farlander
+api-version: '1.20'
+load: STARTUP
+authors: [BlurOne!]

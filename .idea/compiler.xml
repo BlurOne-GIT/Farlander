@@ -9,8 +9,5 @@
         <module name="Farlander" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="Farlander" target="1.8" />
-    </bytecodeTargetLevel>
   </component>
 </project>
